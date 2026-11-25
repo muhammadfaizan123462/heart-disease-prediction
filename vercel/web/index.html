@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دل کی بیماری کی پیش گوئی | Heart Disease Prediction</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', Tahoma, Arial, sans-serif;
+    max-width: 640px; margin: 0 auto; padding: 1rem;
+    background: #f7f3ee; color: #1f2937; line-height: 1.7;
+  }
+  h1 { font-size: 1.7rem; margin: 0.5rem 0 0.2rem; text-align: center; }
+  .subtitle { text-align: center; color: #4b5563; margin-bottom: 1rem; }
+  .lang-row { text-align: center; margin-bottom: 1rem; }
+  .lang-row button {
+    padding: 0.4rem 1.1rem; margin: 0 0.3rem; border-radius: 999px;
+    border: 2px solid #0f766e; background: #fff; color: #0f766e;
+    font-size: 1rem; cursor: pointer;
+  }
+  .lang-row button.active { background: #0f766e; color: #fff; }
+  .disclaimer {
+    background: #fff7e6; border: 2px solid #d97706; border-radius: 12px;
+    padding: 0.9rem 1rem; margin: 1rem 0;
+  }
+  .card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1rem; margin: 1rem 0;
+  }
+  label { display: block; font-weight: bold; margin: 0.8rem 0 0.25rem; }
+  input[type=number], select {
+    width: 100%; padding: 0.55rem; font-size: 1rem; border-radius: 8px;
+    border: 1px solid #9ca3af; background: #fff; color: #111827;
+  }
+  button.primary {
+    width: 100%; padding: 0.8rem; font-size: 1.15rem; font-weight: bold;
+    background: #0f766e; color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; margin-top: 1rem;
+  }
+  button.secondary {
+    width: 100%; padding: 0.6rem; font-size: 1rem;
+    background: #fff; color: #0f766e; border: 2px solid #0f766e;
+    border-radius: 10px; cursor: pointer; margin-top: 0.6rem;
+  }
+  .result-box {
+    padding: 1.2rem; border-radius: 12px; text-align: center;
+    font-size: 1.5rem; font-weight: bold; margin: 1rem 0; display: none;
+  }
+  .result-risk { background: #fde8e8; color: #9b1c1c; border: 2px solid #e02424; display: block; }
+  .result-ok { background: #e6f7ec; color: #14532d; border: 2px solid #16a34a; display: block; }
+  .prob-wrap { margin: 0.5rem 0; }
+  .prob-bar { height: 12px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+  .prob-fill { height: 100%; background: #0f766e; width: 0%; }
+  .note { color: #4b5563; font-size: 0.95rem; }
+  .error { background: #fde8e8; color: #9b1c1c; border: 1px solid #e02424;
+           border-radius: 8px; padding: 0.7rem; margin: 0.8rem 0; display: none; }
+  audio { width: 100%; margin-top: 0.4rem; }
+  .audio-label { font-weight: bold; margin-top: 0.8rem; }
+  details { margin-top: 1rem; }
+  details summary { cursor: pointer; font-weight: bold; }
+  .muted { color: #4b5563; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+  <div class="lang-row">
+    <button id="btn-ur" class="active" onclick="setLang('ur')">اردو</button>
+    <button id="btn-en" onclick="setLang('en')">English</button>
+  </div>
+
+  <h1 id="title">❤️ دل کی بیماری کی پیش گوئی</h1>
+  <p class="subtitle" id="subtitle">اپنی صحت کی معلومات درج کریں — ماڈل بتائے گا کہ دل کی بیماری کا خطرہ ہے یا نہیں</p>
+
+  <div class="disclaimer">
+    <b id="disc-title">⚠️ اہم انتباہ</b><br>
+    <span id="disc-text">یہ ایپ صرف تعلیم کے لیے ہے۔ یہ طبی تشخیص نہیں ہے۔ نتیجہ چاہے کچھ بھی ہو، اپنی صحت کے بارے میں ہمیشہ ڈاکٹر سے مشورہ کریں۔ سینے میں درد، سانس لینے میں دشواری یا بے ہوشی کی صورت میں فوراً ایمرجنسی مدد حاصل کریں۔</span>
+  </div>
+
+  <div class="card">
+    <h2 id="inputs-title" style="margin-top:0">آپ کی معلومات</h2>
+    <button class="secondary" id="example-btn" onclick="fillExample()">مثال والا مریض بھریں</button>
+    <div id="form"></div>
+    <label style="margin-top:1rem">
+      <input type="checkbox" id="autoplay" checked>
+      <span id="autoplay-label">نتیجہ اردو اور انگریزی دونوں میں خود بخود سنائیں</span>
+    </label>
+    <button class="primary" id="predict-btn" onclick="predict()">پیش گوئی کریں</button>
+    <div class="error" id="error"></div>
+  </div>
+
+  <div class="result-box" id="result"></div>
+  <div class="prob-wrap" id="prob-wrap" style="display:none">
+    <div><b id="prob-label">خطرے کا امکان</b>: <span id="prob-value"></span></div>
+    <div class="prob-bar"><div class="prob-fill" id="prob-fill"></div></div>
+    <p class="note" id="accuracy-note">ماڈل کی درستگی (ٹیسٹ ڈیٹا): 83.3٪ — یہ صرف ایک اندازہ ہے</p>
+  </div>
+
+  <div class="card" id="audio-card" style="display:none">
+    <button class="secondary" id="listen-btn" style="margin-top:0" onclick="if (window._lastLabel) playResultAudio(window._lastLabel)">🔊 سنیں</button>
+    <div class="audio-label" id="listen-ur-label">🔊 اردو میں سنیں</div>
+    <audio id="audio-ur" controls autoplay></audio>
+    <div class="audio-label" id="listen-en-label">🔊 انگریزی میں سنیں</div>
+    <audio id="audio-en" controls></audio>
+    <p class="note" id="audio-fail" style="display:none">آواز تیار نہیں ہو سکی — نیچے لکھا نتیجہ پڑھ لیں۔</p>
+  </div>
+
+  <details class="card">
+    <summary id="model-title">ماڈل کی معلومات</summary>
+    <div id="model-info"></div>
+  </details>
+
+<script>
+const STR = {
+  ur: {
+    title: "❤️ دل کی بیماری کی پیش گوئی",
+    subtitle: "اپنی صحت کی معلومات درج کریں — ماڈل بتائے گا کہ دل کی بیماری کا خطرہ ہے یا نہیں",
+    discTitle: "⚠️ اہم انتباہ",
+    discText: "یہ ایپ صرف تعلیم کے لیے ہے۔ یہ طبی تشخیص نہیں ہے۔ نتیجہ چاہے کچھ بھی ہو، اپنی صحت کے بارے میں ہمیشہ ڈاکٹر سے مشورہ کریں۔ سینے میں درد، سانس لینے میں دشواری یا بے ہوشی کی صورت میں فوراً ایمرجنسی مدد حاصل کریں۔",
+    inputsTitle: "آپ کی معلومات",
+    exampleBtn: "مثال والا مریض بھریں",
+    autoplay: "نتیجہ اردو اور انگریزی دونوں میں خود بخود سنائیں",
+    predictBtn: "پیش گوئی کریں",
+    resultPresence: "دل کی بیماری کا خطرہ ہے",
+    resultAbsence: "دل کی بیماری کا خطرہ نہیں ہے",
+    probLabel: "خطرے کا امکان",
+    accuracyNote: "ماڈل کی درستگی (ٹیسٹ ڈیٹا): 83.3٪ — یہ صرف ایک اندازہ ہے",
+    listenUr: "🔊 اردو میں سنیں",
+    listenEn: "🔊 انگریزی میں سنیں",
+    listenBtn: "🔊 سنیں",
+    audioFail: "آواز تیار نہیں ہو سکی — نیچے لکھا نتیجہ پڑھ لیں۔",
+    modelTitle: "ماڈل کی معلومات",
+    modelInfo: "<ul>"
+      + "<li><b>ڈیٹا سیٹ:</b> UCI StatLog Heart Disease — 270 مریض، 14 کالم (CC0، پبلک ڈومین)</li>"
+      + "<li><b>الگورتھم:</b> Logistic Regression (نوٹ بک والی ترتیبات)</li>"
+      + "<li><b>درستگی:</b> ٹریننگ 87.5٪، ٹیسٹ 83.3٪، 5-fold CV 84.8٪</li>"
+      + "<li><b>نوٹ بک کی غلطی درست کی گئی:</b> سیل 28 میں 'absence' (چھوٹے حروف) سے موازنہ کیا گیا تھا جبکہ اصل لیبل 'Absence' ہے — اس لیے مثال والے مریض کو غلط پیغام ملا تھا۔ اس ایپ میں لیبل درست طریقے سے جانچا جاتا ہے۔</li>"
+      + "<li><b>حد:</b> ڈیفالٹ max_iter=100 پر ماڈل مکمل converge نہیں ہوتا (نوٹ بک والی وارننگ) — scaled + max_iter=1000 والا متبادل آزمایا گیا، بہتر نہیں تھا (ٹیسٹ 79.6٪)۔</li>"
+      + "<li><b>آواز:</b> نتیجہ اردو اور انگریزی دونوں میں بولا جاتا ہے — edge-tts (ur-PK-AsadNeural / en-US-AriaNeural) سے، ناکامی پر gTTS سے۔</li>"
+      + "</ul>",
+  },
+  en: {
+    title: "❤️ Heart Disease Prediction",
+    subtitle: "Enter your health information — the model will tell you whether there is a risk of heart disease",
+    discTitle: "⚠️ Important warning",
+    discText: "This app is for education only. It is NOT a medical diagnosis. Whatever the result, always consult a doctor about your health. In case of chest pain, breathing difficulty or fainting, seek emergency help immediately.",
+    inputsTitle: "Your information",
+    exampleBtn: "Fill in the example patient",
+    autoplay: "Play the result automatically in Urdu and English",
+    predictBtn: "Predict",
+    resultPresence: "Risk of heart disease",
+    resultAbsence: "No risk of heart disease",
+    probLabel: "Risk probability",
+    accuracyNote: "Model accuracy (test data): 83.3% — this is only an estimate",
+    listenUr: "🔊 Listen in Urdu",
+    listenEn: "🔊 Listen in English",
+    listenBtn: "🔊 Listen",
+    audioFail: "Could not generate audio — please read the written result below.",
+    modelTitle: "Model information",
+    modelInfo: "<ul>"
+      + "<li><b>Dataset:</b> UCI StatLog Heart Disease — 270 patients, 14 columns (CC0, public domain)</li>"
+      + "<li><b>Algorithm:</b> Logistic Regression (notebook settings)</li>"
+      + "<li><b>Accuracy:</b> train 87.5%, test 83.3%, 5-fold CV 84.8%</li>"
+      + "<li><b>Notebook bug fixed:</b> cell 28 compared against 'absence' (lowercase) while the real label is 'Absence' — so the example patient got the wrong message. Labels are compared correctly here.</li>"
+      + "<li><b>Limitation:</b> with default max_iter=100 the model does not fully converge (the notebook's warning) — the scaled + max_iter=1000 alternative was tried and was not better (test 79.6%).</li>"
+      + "<li><b>Voice:</b> the result is spoken in both Urdu and English — via edge-tts (ur-PK-AsadNeural / en-US-AriaNeural), falling back to gTTS.</li>"
+      + "</ul>",
+  },
+};
+
+// key, Urdu label, English label, kind, min, max, default, step, options [value, ur, en]
+const FIELDS = [
+  ["age", "عمر", "Age", "int", 1, 120, 57, 1, null],
+  ["sex", "جنس", "Sex", "select", null, null, 1, null, [[1, "مرد (Mard)", "Male"], [0, "عورت (Aurat)", "Female"]]],
+  ["cp", "سینے کے درد کی قسم", "Chest pain type", "select", null, null, 2, null, [
+    [1, "1 — عام اینجائنا (Typical angina)", "1 — Typical angina"],
+    [2, "2 — غیر معمولی اینجائنا (Atypical angina)", "2 — Atypical angina"],
+    [3, "3 — غیر اینجائنا درد (Non-anginal pain)", "3 — Non-anginal pain"],
+    [4, "4 — بغیر علامت (Asymptomatic)", "4 — Asymptomatic"],
+  ]],
+  ["bp", "آرام کے وقت بلڈ پریشر", "Resting blood pressure (BP)", "int", 50, 250, 124, 1, null],
+  ["chol", "کولیسٹرول", "Cholesterol", "int", 50, 700, 261, 1, null],
+  ["fbs", "خالی پیٹ شوگر 120 سے زیادہ؟", "Fasting blood sugar > 120?", "select", null, null, 0, null, [[0, "نہیں (No)", "No"], [1, "ہاں (Yes)", "Yes"]]],
+  ["ekg", "ای سی جی نتیجہ", "EKG results", "select", null, null, 0, null, [
+    [0, "0 — نارمل (Normal)", "0 — Normal"],
+    [1, "1 — ایس ٹی ٹی خرابی (ST-T wave abnormality)", "1 — ST-T wave abnormality"],
+    [2, "2 — بائیں وینٹریکل کی موٹائی (LV hypertrophy)", "2 — LV hypertrophy"],
+  ]],
+  ["hr", "ورزش کے دوران زیادہ سے زیادہ دل کی دھڑکن", "Maximum heart rate", "int", 40, 250, 141, 1, null],
+  ["angina", "ورزش سے سینے میں درد؟", "Exercise-induced angina?", "select", null, null, 0, null, [[0, "نہیں (No)", "No"], [1, "ہاں (Yes)", "Yes"]]],
+  ["st", "ایس ٹی ڈپریشن", "ST depression", "float", 0, 7, 0.3, 0.1, null],
+  ["slope", "ایس ٹی کی ڈھلان", "Slope of ST segment", "select", null, null, 1, null, [
+    [1, "1 — اوپر کی طرف (Upsloping)", "1 — Upsloping"],
+    [2, "2 — برابر (Flat)", "2 — Flat"],
+    [3, "3 — نیچے کی طرف (Downsloping)", "3 — Downsloping"],
+  ]],
+  ["vessels", "رنگ سے دیکھی گئی بند نالیاں", "Major vessels (fluoroscopy)", "int", 0, 3, 0, 1, null],
+  ["thal", "تھیلیم ٹیسٹ", "Thallium test", "select", null, null, 7, null, [
+    [3, "3 — نارمل (Normal)", "3 — Normal"],
+    [6, "6 — مستقل خرابی (Fixed defect)", "6 — Fixed defect"],
+    [7, "7 — قابل واپسی خرابی (Reversible defect)", "7 — Reversible defect"],
+  ]],
+];
+
+const EXAMPLE = [57, 1, 2, 124, 261, 0, 0, 141, 0, 0.3, 1, 0, 7];
+let lang = "ur";
+
+function fieldLabel(f) {
+  return lang === "ur" ? f[1] + " (" + f[2] + ")" : f[2] + " (" + f[1] + ")";
+}
+
+function renderForm() {
+  const form = document.getElementById("form");
+  form.innerHTML = "";
+  FIELDS.forEach((f, i) => {
+    const wrap = document.createElement("div");
+    const label = document.createElement("label");
+    label.textContent = fieldLabel(f);
+    label.htmlFor = "f-" + i;
+    wrap.appendChild(label);
+    let input;
+    if (f[3] === "select") {
+      input = document.createElement("select");
+      f[8].forEach(opt => {
+        const o = document.createElement("option");
+        o.value = opt[0];
+        o.textContent = lang === "ur" ? opt[1] : opt[2];
+        if (opt[0] === f[6]) o.selected = true;
+        input.appendChild(o);
+      });
+    } else {
+      input = document.createElement("input");
+      input.type = "number";
+      input.min = f[4]; input.max = f[5];
+      input.step = f[3] === "float" ? f[7] : 1;
+      input.value = f[6];
+    }
+    input.id = "f-" + i;
+    wrap.appendChild(input);
+    form.appendChild(wrap);
+  });
+}
+
+function applyStrings() {
+  const S = STR[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
+  document.getElementById("title").textContent = S.title;
+  document.getElementById("subtitle").textContent = S.subtitle;
+  document.getElementById("disc-title").textContent = S.discTitle;
+  document.getElementById("disc-text").textContent = S.discText;
+  document.getElementById("inputs-title").textContent = S.inputsTitle;
+  document.getElementById("example-btn").textContent = S.exampleBtn;
+  document.getElementById("autoplay-label").textContent = S.autoplay;
+  document.getElementById("predict-btn").textContent = S.predictBtn;
+  document.getElementById("prob-label").textContent = S.probLabel;
+  document.getElementById("accuracy-note").textContent = S.accuracyNote;
+  document.getElementById("listen-ur-label").textContent = S.listenUr;
+  document.getElementById("listen-en-label").textContent = S.listenEn;
+  document.getElementById("listen-btn").textContent = S.listenBtn;
+  document.getElementById("audio-fail").textContent = S.audioFail;
+  document.getElementById("model-title").textContent = S.modelTitle;
+  document.getElementById("model-info").innerHTML = S.modelInfo;
+  document.getElementById("btn-ur").classList.toggle("active", lang === "ur");
+  document.getElementById("btn-en").classList.toggle("active", lang === "en");
+}
+
+function setLang(l) {
+  // Keep current values across the re-render.
+  const vals = collectValues(true);
+  lang = l;
+  applyStrings();
+  renderForm();
+  if (vals) {
+    vals.forEach((v, i) => {
+      const el = document.getElementById("f-" + i);
+      if (el) el.value = v;
+    });
+  }
+}
+
+function collectValues(quiet) {
+  const values = [];
+  for (let i = 0; i < FIELDS.length; i++) {
+    const el = document.getElementById("f-" + i);
+    if (!el) return null;
+    const v = parseFloat(el.value);
+    if (isNaN(v)) {
+      if (!quiet) showError("Please fill in all fields / تمام خانے بھریں");
+      return null;
+    }
+    values.push(v);
+  }
+  return values;
+}
+
+function showError(msg) {
+  const e = document.getElementById("error");
+  e.textContent = msg;
+  e.style.display = "block";
+}
+
+function hideError() {
+  document.getElementById("error").style.display = "none";
+}
+
+function fillExample() {
+  EXAMPLE.forEach((v, i) => {
+    const el = document.getElementById("f-" + i);
+    if (el) el.value = v;
+  });
+}
+
+async function loadAudio(elId, label, audioLang) {
+  const res = await fetch("/api/speak?label=" + label + "&lang=" + audioLang);
+  if (!res.ok) return false;
+  const blob = await res.blob();
+  document.getElementById(elId).src = URL.createObjectURL(blob);
+  return true;
+}
+
+async function playResultAudio(label) {
+  const card = document.getElementById("audio-card");
+  const fail = document.getElementById("audio-fail");
+  const listenBtn = document.getElementById("listen-btn");
+  card.style.display = "block";
+  fail.style.display = "none";
+  // Urdu first (autoplays), English as a separate player below so the
+  // two voices never talk over each other.
+  const okUr = await loadAudio("audio-ur", label, "ur");
+  const okEn = await loadAudio("audio-en", label, "en");
+  if (!okUr && !okEn) fail.style.display = "block";
+  else if (!okUr || !okEn) fail.style.display = "block";
+  if (okUr) {
+    listenBtn.style.display = "none";
+    document.getElementById("audio-ur").play().catch(() => {});
+  }
+}
+
+async function predict() {
+  hideError();
+  const values = collectValues(false);
+  if (!values) return;
+  const btn = document.getElementById("predict-btn");
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.error || ("Error " + res.status));
+      return;
+    }
+    const S = STR[lang];
+    const box = document.getElementById("result");
+    box.textContent = data.label === "Presence" ? S.resultPresence : S.resultAbsence;
+    box.className = "result-box " + (data.label === "Presence" ? "result-risk" : "result-ok");
+    const pct = (data.probability * 100).toFixed(1);
+    document.getElementById("prob-value").textContent = pct + "%";
+    document.getElementById("prob-fill").style.width = pct + "%";
+    document.getElementById("prob-wrap").style.display = "block";
+    if (document.getElementById("autoplay").checked) {
+      playResultAudio(data.label);
+    } else {
+      // Show the card with the Listen button; audio plays on tap.
+      document.getElementById("audio-card").style.display = "block";
+      document.getElementById("listen-btn").style.display = "block";
+      document.getElementById("audio-ur").removeAttribute("src");
+      document.getElementById("audio-en").removeAttribute("src");
+    }
+    // Remember the label for the manual play path.
+    window._lastLabel = data.label;
+  } catch (e) {
+    showError("Network error: " + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+applyStrings();
+renderForm();
+</script>
+</body>
+</html>

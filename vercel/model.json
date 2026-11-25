@@ -1,0 +1,45 @@
+{
+  "features": [
+    "Age",
+    "Sex",
+    "Chest pain type",
+    "BP",
+    "Cholesterol",
+    "FBS over 120",
+    "EKG results",
+    "Max HR",
+    "Exercise angina",
+    "ST depression",
+    "Slope of ST",
+    "Number of vessels fluro",
+    "Thallium"
+  ],
+  "classes": [
+    "Absence",
+    "Presence"
+  ],
+  "coefficients": [
+    -0.05144194908055222,
+    0.9403785235648148,
+    0.5386450443472505,
+    0.018044705900125645,
+    0.005308598038606175,
+    -0.16150787743053785,
+    0.24099491934606446,
+    -0.042263145525618155,
+    0.5599801629737283,
+    0.4182320658865771,
+    0.06812453478936624,
+    1.2018620170350776,
+    0.30139843880942957
+  ],
+  "intercept": -0.21513480936649687,
+  "metrics": {
+    "train_accuracy": 0.875,
+    "test_accuracy": 0.8333,
+    "cv5_accuracy": 0.8481,
+    "n_rows": 270,
+    "n_train": 216,
+    "n_test": 54
+  }
+}
