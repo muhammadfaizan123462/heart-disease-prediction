@@ -1,0 +1,10 @@
+{
+  "train_accuracy": 0.875,
+  "test_accuracy": 0.8333,
+  "cv5_accuracy": 0.8481,
+  "n_rows": 270,
+  "n_train": 216,
+  "n_test": 54,
+  "dataset": "UCI StatLog Heart Disease (270 rows, 14 columns, CC0)",
+  "algorithm": "LogisticRegression (default settings, max_iter=100)"
+}
